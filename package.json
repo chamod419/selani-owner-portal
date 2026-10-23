@@ -1,0 +1,23 @@
+{
+  "name": "selani-owner-portal",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --env-file=.env.local server/dev.mjs",
+    "build": "vite build",
+    "db:test": "node --env-file=.env.local tools/test-db.mjs",
+    "owner:create": "node --env-file=.env.local tools/create-owner.mjs"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "dependencies": {
+    "mongodb": "7.7.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "vite": "8.3.5"
+  }
+}
