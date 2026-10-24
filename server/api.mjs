@@ -460,6 +460,9 @@ export async function handleRequest(
                     _id: 0,
                     clientId: 1,
                     orderId: 1,
+orderNumber: 1,
+orderDate: 1,
+dailyNumber: 1,
                     orderType: 1,
                     method: 1,
                     totalCents: 1,
@@ -517,3 +520,4 @@ export async function handleRequest(
     );
   }
 }
+// SELANI_DAILY_ORDERS_V1

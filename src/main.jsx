@@ -628,9 +628,7 @@ function Dashboard({ owner, onLogout }) {
                         <td>
                           <strong>
                             #
-                            {String(
-                              order.orderId,
-                            ).padStart(5, "0")}
+                            {order.orderNumber || String(order.orderId).padStart(5, "0")}
                           </strong>
                         </td>
 
@@ -836,3 +834,4 @@ function App() {
 createRoot(
   document.getElementById("root"),
 ).render(<App />);
+// SELANI_DAILY_ORDERS_V1
