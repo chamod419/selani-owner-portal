@@ -45,14 +45,37 @@ function today() {
   );
 }
 
+function orderNumber(order) {
+  const value =
+    Number.isSafeInteger(order.dailyNumber) &&
+    order.dailyNumber > 0
+      ? String(order.dailyNumber)
+      : String(
+          order.orderNumber ?? "",
+        ).replace(/^\d{8}-/, "");
+
+  if (!/^\d+$/.test(value)) {
+    return "Pending sync";
+  }
+
+  return (
+    "#" +
+    value
+      .replace(/^0+(?=\d)/, "")
+      .padStart(5, "0")
+  );
+}
+
 async function api(path, options = {}) {
   const response = await fetch(`/api/${path}`, {
     credentials: "same-origin",
     ...options,
+
     headers: {
       "Content-Type": "application/json",
       ...options.headers,
     },
+
     signal:
       options.signal ||
       AbortSignal.timeout(20000),
@@ -65,10 +88,11 @@ async function api(path, options = {}) {
   if (!response.ok) {
     const error = new Error(
       body.error ||
-        "Unable to complete the request.",
+      "Unable to complete the request.",
     );
 
     error.status = response.status;
+
     throw error;
   }
 
@@ -107,12 +131,14 @@ function Login({ onLogin, initialError }) {
 
   async function submit(event) {
     event.preventDefault();
+
     setBusy(true);
     setError("");
 
     try {
       const result = await api("login", {
         method: "POST",
+
         body: JSON.stringify({
           email,
           password,
@@ -124,7 +150,7 @@ function Login({ onLogin, initialError }) {
     } catch (failure) {
       setError(
         failure.message ||
-          "Connection failed. Please try again.",
+        "Connection failed. Please try again.",
       );
     } finally {
       setBusy(false);
@@ -179,10 +205,7 @@ function Login({ onLogin, initialError }) {
           </p>
 
           {error && (
-            <div
-              className="error"
-              role="alert"
-            >
+            <div className="error" role="alert">
               {error}
             </div>
           )}
@@ -282,7 +305,9 @@ function Dashboard({ owner, onLogout }) {
         }
       })
       .catch((failure) => {
-        if (!active) return;
+        if (!active) {
+          return;
+        }
 
         if (failure.status === 401) {
           onLogout();
@@ -305,6 +330,7 @@ function Dashboard({ owner, onLogout }) {
 
     return () => {
       active = false;
+
       clearTimeout(timer);
       controller.abort();
     };
@@ -436,6 +462,7 @@ function Dashboard({ owner, onLogout }) {
         >
           <label>
             From
+
             <input
               type="date"
               required
@@ -453,6 +480,7 @@ function Dashboard({ owner, onLogout }) {
 
           <label>
             To
+
             <input
               type="date"
               required
@@ -502,7 +530,9 @@ function Dashboard({ owner, onLogout }) {
             type="button"
             disabled={loading}
             onClick={() => {
-              setRefresh((value) => value + 1);
+              setRefresh(
+                (value) => value + 1,
+              );
             }}
           >
             ↻ Refresh
@@ -510,17 +540,16 @@ function Dashboard({ owner, onLogout }) {
         </form>
 
         {error && (
-          <div
-            className="error"
-            role="alert"
-          >
+          <div className="error" role="alert">
             {error}
           </div>
         )}
 
         {!loading && report && !synced && (
           <div className="notice">
-            <strong>Your portal is ready.</strong>
+            <strong>
+              Your portal is ready.
+            </strong>
 
             <span>
               Sales will appear after we connect this
@@ -577,12 +606,17 @@ function Dashboard({ owner, onLogout }) {
               className="empty"
               role="status"
             >
-              <span className="empty-symbol">◌</span>
+              <span className="empty-symbol">
+                ◌
+              </span>
+
               <h3>Loading your report…</h3>
             </div>
           ) : !report?.orders.length ? (
             <div className="empty">
-              <span className="empty-symbol">≡</span>
+              <span className="empty-symbol">
+                ≡
+              </span>
 
               <h3>
                 {error
@@ -609,7 +643,10 @@ function Dashboard({ owner, onLogout }) {
                     <th>Payment time</th>
                     <th>Type</th>
                     <th>Payment</th>
-                    <th className="amount">Total</th>
+
+                    <th className="amount">
+                      Total
+                    </th>
 
                     <th>
                       <span className="sr-only">
@@ -627,8 +664,7 @@ function Dashboard({ owner, onLogout }) {
                       <tr>
                         <td>
                           <strong>
-                            #
-                            {order.orderNumber || String(order.orderId).padStart(5, "0")}
+                            {orderNumber(order)}
                           </strong>
                         </td>
 
@@ -636,7 +672,9 @@ function Dashboard({ owner, onLogout }) {
                           {dateTime(order.paidAt)}
                         </td>
 
-                        <td>{order.orderType}</td>
+                        <td>
+                          {order.orderType}
+                        </td>
 
                         <td>
                           <span className="payment">
@@ -674,9 +712,17 @@ function Dashboard({ owner, onLogout }) {
                         </td>
                       </tr>
 
-                      {expanded === order.clientId && (
+                      {expanded ===
+                        order.clientId && (
                         <tr className="detail-row">
                           <td colSpan={6}>
+                            {order.orderDate && (
+                              <p className="muted">
+                                Order date:{" "}
+                                {order.orderDate}
+                              </p>
+                            )}
+
                             <ul>
                               {(order.items || []).map(
                                 (item, index) => (
@@ -694,7 +740,7 @@ function Dashboard({ owner, onLogout }) {
                                     <strong>
                                       {money(
                                         item.priceCents *
-                                          item.quantity,
+                                        item.quantity,
                                       )}
                                     </strong>
                                   </li>
@@ -716,7 +762,8 @@ function Dashboard({ owner, onLogout }) {
               <button
                 className="quiet"
                 disabled={
-                  loading || query.page <= 1
+                  loading ||
+                  query.page <= 1
                 }
                 onClick={() => {
                   setQuery({
@@ -735,7 +782,8 @@ function Dashboard({ owner, onLogout }) {
               <button
                 className="quiet"
                 disabled={
-                  loading || query.page >= pages
+                  loading ||
+                  query.page >= pages
                 }
                 onClick={() => {
                   setQuery({
@@ -809,10 +857,7 @@ function App() {
 
   if (booting) {
     return (
-      <div
-        className="boot"
-        role="status"
-      >
+      <div className="boot" role="status">
         Opening Selani Owner Portal…
       </div>
     );
@@ -834,4 +879,5 @@ function App() {
 createRoot(
   document.getElementById("root"),
 ).render(<App />);
+
 // SELANI_DAILY_ORDERS_V1

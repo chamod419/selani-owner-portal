@@ -28,7 +28,8 @@ function digest(value) {
 }
 
 export async function hashPassword(password) {
-  const salt = randomBytes(16).toString("hex");
+  const salt =
+    randomBytes(16).toString("hex");
 
   const key = await derive(
     password,
@@ -40,8 +41,12 @@ export async function hashPassword(password) {
   return `${salt}:${key.toString("hex")}`;
 }
 
-export async function verifyPassword(password, stored) {
-  const [salt, hash] = (stored || "").split(":");
+export async function verifyPassword(
+  password,
+  stored,
+) {
+  const [salt, hash] =
+    (stored || "").split(":");
 
   const valid =
     /^[a-f0-9]{32}$/.test(salt || "") &&
@@ -59,12 +64,20 @@ export async function verifyPassword(password, stored) {
     "hex",
   );
 
-  return timingSafeEqual(key, expected) && valid;
+  return (
+    timingSafeEqual(key, expected) &&
+    valid
+  );
 }
 
-function json(body, status = 200, extraHeaders = {}) {
+function json(
+  body,
+  status = 200,
+  extraHeaders = {},
+) {
   return Response.json(body, {
     status,
+
     headers: {
       "Cache-Control": "no-store",
       "X-Content-Type-Options": "nosniff",
@@ -73,7 +86,11 @@ function json(body, status = 200, extraHeaders = {}) {
   });
 }
 
-function sessionCookie(request, token, clear = false) {
+function sessionCookie(
+  request,
+  token,
+  clear = false,
+) {
   const secure =
     new URL(request.url).protocol === "https:"
       ? "; Secure"
@@ -85,16 +102,20 @@ function sessionCookie(request, token, clear = false) {
 
   return (
     `${COOKIE}=${clear ? "" : token}; ` +
-    `Path=/; HttpOnly; SameSite=Strict; ` +
+    "Path=/; HttpOnly; SameSite=Strict; " +
     `Max-Age=${maxAge}${secure}`
   );
 }
 
 function tokenFrom(request) {
-  const value = (request.headers.get("cookie") || "")
+  const value = (
+    request.headers.get("cookie") || ""
+  )
     .split(";")
     .map((entry) => entry.trim())
-    .find((entry) => entry.startsWith(`${COOKIE}=`))
+    .find((entry) =>
+      entry.startsWith(`${COOKIE}=`),
+    )
     ?.slice(COOKIE.length + 1);
 
   return /^[a-f0-9]{64}$/.test(value || "")
@@ -102,8 +123,14 @@ function tokenFrom(request) {
     : null;
 }
 
-async function allowLoginAttempt(db, key, maximum) {
-  const bucket = Math.floor(Date.now() / 900000);
+async function allowLoginAttempt(
+  db,
+  key,
+  maximum,
+) {
+  const bucket = Math.floor(
+    Date.now() / 900000,
+  );
 
   const result = await db
     .collection("login_limits")
@@ -115,6 +142,7 @@ async function allowLoginAttempt(db, key, maximum) {
         $inc: {
           count: 1,
         },
+
         $setOnInsert: {
           expiresAt: new Date(
             (bucket + 2) * 900000,
@@ -131,11 +159,17 @@ async function allowLoginAttempt(db, key, maximum) {
 }
 
 function dateStart(value) {
-  if (!/^20\d{2}-\d{2}-\d{2}$/.test(value || "")) {
+  if (
+    !/^20\d{2}-\d{2}-\d{2}$/.test(
+      value || "",
+    )
+  ) {
     return null;
   }
 
-  const utc = new Date(`${value}T00:00:00Z`);
+  const utc = new Date(
+    `${value}T00:00:00Z`,
+  );
 
   if (
     !Number.isFinite(utc.getTime()) ||
@@ -144,7 +178,6 @@ function dateStart(value) {
     return null;
   }
 
-  // Sri Lanka midnight, converted to UTC.
   return new Date(
     utc.getTime() - 330 * 60000,
   );
@@ -160,22 +193,31 @@ export async function handleRequest(
 
     if (request.method === "POST") {
       if (
-        request.headers.get("origin") !== url.origin
+        request.headers.get("origin") !==
+        url.origin
       ) {
         return json(
-          { error: "This request is not allowed." },
+          {
+            error:
+              "This request is not allowed.",
+          },
           403,
         );
       }
 
       const contentType =
-        request.headers.get("content-type") || "";
+        request.headers.get("content-type") ||
+        "";
 
       if (
-        !/^application\/json(?:;|$)/i.test(contentType)
+        !/^application\/json(?:;|$)/i.test(
+          contentType,
+        )
       ) {
         return json(
-          { error: "Send a JSON request." },
+          {
+            error: "Send a JSON request.",
+          },
           415,
         );
       }
@@ -189,9 +231,13 @@ export async function handleRequest(
     ) {
       const text = await request.text();
 
-      if (Buffer.byteLength(text) > 4096) {
+      if (
+        Buffer.byteLength(text) > 4096
+      ) {
         return json(
-          { error: "Request is too large." },
+          {
+            error: "Request is too large.",
+          },
           413,
         );
       }
@@ -202,7 +248,9 @@ export async function handleRequest(
         body = JSON.parse(text);
       } catch {
         return json(
-          { error: "Invalid request." },
+          {
+            error: "Invalid request.",
+          },
           400,
         );
       }
@@ -222,16 +270,20 @@ export async function handleRequest(
         password.length > 128
       ) {
         return json(
-          { error: "Enter your email and password." },
+          {
+            error:
+              "Enter your email and password.",
+          },
           400,
         );
       }
 
-      const ipAllowed = await allowLoginAttempt(
-        db,
-        `ip:${context.ip || "unknown"}`,
-        40,
-      );
+      const ipAllowed =
+        await allowLoginAttempt(
+          db,
+          `ip:${context.ip || "unknown"}`,
+          40,
+        );
 
       const emailAllowed =
         ipAllowed &&
@@ -261,10 +313,11 @@ export async function handleRequest(
           email,
         });
 
-      const correct = await verifyPassword(
-        password,
-        owner?.passwordHash,
-      );
+      const correct =
+        await verifyPassword(
+          password,
+          owner?.passwordHash,
+        );
 
       if (!owner || !correct) {
         return json(
@@ -279,15 +332,18 @@ export async function handleRequest(
       const token =
         randomBytes(32).toString("hex");
 
-      await db.collection("sessions").insertOne({
-        _id: digest(token),
-        ownerId: "owner",
-        email,
-        expiresAt: new Date(
-          Date.now() +
+      await db
+        .collection("sessions")
+        .insertOne({
+          _id: digest(token),
+          ownerId: "owner",
+          email,
+
+          expiresAt: new Date(
+            Date.now() +
             SESSION_HOURS * 3600000,
-        ),
-      });
+          ),
+        });
 
       return json(
         {
@@ -295,10 +351,8 @@ export async function handleRequest(
         },
         200,
         {
-          "Set-Cookie": sessionCookie(
-            request,
-            token,
-          ),
+          "Set-Cookie":
+            sessionCookie(request, token),
         },
       );
     }
@@ -306,17 +360,22 @@ export async function handleRequest(
     const token = tokenFrom(request);
 
     const session = token
-      ? await db.collection("sessions").findOne({
-          _id: digest(token),
-          expiresAt: {
-            $gt: new Date(),
-          },
-        })
+      ? await db
+          .collection("sessions")
+          .findOne({
+            _id: digest(token),
+
+            expiresAt: {
+              $gt: new Date(),
+            },
+          })
       : null;
 
     if (!session) {
       return json(
-        { error: "Please log in again." },
+        {
+          error: "Please log in again.",
+        },
         401,
       );
     }
@@ -336,12 +395,16 @@ export async function handleRequest(
       route === "/api/logout" &&
       request.method === "POST"
     ) {
-      await db.collection("sessions").deleteOne({
-        _id: digest(token),
-      });
+      await db
+        .collection("sessions")
+        .deleteOne({
+          _id: digest(token),
+        });
 
       return json(
-        { ok: true },
+        {
+          ok: true,
+        },
         200,
         {
           "Set-Cookie": sessionCookie(
@@ -357,8 +420,11 @@ export async function handleRequest(
       route === "/api/reports" &&
       request.method === "GET"
     ) {
-      const from = url.searchParams.get("from");
-      const to = url.searchParams.get("to");
+      const from =
+        url.searchParams.get("from");
+
+      const to =
+        url.searchParams.get("to");
 
       const page = Number(
         url.searchParams.get("page") || 1,
@@ -391,8 +457,10 @@ export async function handleRequest(
           {
             $match: {
               storeId: STORE,
+
               paidAt: {
                 $gte: start,
+
                 $lt: new Date(
                   last.getTime() + 86400000,
                 ),
@@ -405,12 +473,15 @@ export async function handleRequest(
                 {
                   $group: {
                     _id: null,
+
                     count: {
                       $sum: 1,
                     },
+
                     totalCents: {
                       $sum: "$totalCents",
                     },
+
                     cashCents: {
                       $sum: {
                         $cond: [
@@ -425,6 +496,7 @@ export async function handleRequest(
                         ],
                       },
                     },
+
                     cardCents: {
                       $sum: {
                         $cond: [
@@ -442,6 +514,7 @@ export async function handleRequest(
                   },
                 },
               ],
+
               orders: [
                 {
                   $sort: {
@@ -460,9 +533,9 @@ export async function handleRequest(
                     _id: 0,
                     clientId: 1,
                     orderId: 1,
-orderNumber: 1,
-orderDate: 1,
-dailyNumber: 1,
+                    orderNumber: 1,
+                    orderDate: 1,
+                    dailyNumber: 1,
                     orderType: 1,
                     method: 1,
                     totalCents: 1,
@@ -488,20 +561,25 @@ dailyNumber: 1,
         page,
         pageSize: 20,
         timeZone: "Asia/Colombo",
+
         summary: result?.summary[0] || {
           count: 0,
           totalCents: 0,
           cashCents: 0,
           cardCents: 0,
         },
+
         orders: result?.orders || [],
+
         lastSyncedAt:
           state?.lastSyncedAt || null,
       });
     }
 
     return json(
-      { error: "Page not found." },
+      {
+        error: "Page not found.",
+      },
       404,
     );
   } catch (error) {
@@ -520,4 +598,5 @@ dailyNumber: 1,
     );
   }
 }
+
 // SELANI_DAILY_ORDERS_V1
